@@ -19,7 +19,7 @@ import {
   Menu
 } from '@mui/material';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Menu as MenuIcon, People as PeopleIcon, CalendarToday as CalendarIcon, Assessment as AssessmentIcon, Upload as UploadIcon, Notifications as NotificationsIcon } from '@mui/icons-material';
+import { Menu as MenuIcon, People as PeopleIcon, CalendarToday as CalendarIcon, Assessment as AssessmentIcon, Upload as UploadIcon, Notifications as NotificationsIcon, BarChart as BarChartIcon } from '@mui/icons-material';
 import { useState } from 'react';
 import NotificationBell from '../notification/NotificationBell';
 
@@ -56,6 +56,10 @@ const Layout = () => {
   const notificationMenuItems = [
     { text: '通知管理', path: '/notifications' },
     { text: '通知設定', path: '/notifications/settings' },
+  ];
+
+  const reportMenuItems = [
+    { text: '報告總覽', path: '/reports' },
   ];
 
   const drawer = (
@@ -103,6 +107,22 @@ const Layout = () => {
             >
               <ListItemIcon>
                 <NotificationsIcon />
+              </ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+
+        <ListSubheader>報告統計</ListSubheader>
+        {reportMenuItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={item.path}
+              selected={location.pathname === item.path}
+            >
+              <ListItemIcon>
+                <BarChartIcon />
               </ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItemButton>
