@@ -1,4 +1,4 @@
-// frontend/src/components/common/Layout.js
+// frontend/src/components/common/Layout.js (更新後)
 import React from 'react';
 import {
   AppBar,
@@ -14,20 +14,32 @@ import {
   Box,
   IconButton,
   Collapse,
-  ListSubheader
+  ListSubheader,
+  MenuItem,
+  Menu
 } from '@mui/material';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Menu as MenuIcon, People as PeopleIcon, CalendarToday as CalendarIcon, Assessment as AssessmentIcon, Upload as UploadIcon } from '@mui/icons-material';
+import { Menu as MenuIcon, People as PeopleIcon, CalendarToday as CalendarIcon, Assessment as AssessmentIcon, Upload as UploadIcon, Notifications as NotificationsIcon } from '@mui/icons-material';
 import { useState } from 'react';
+import NotificationBell from '../notification/NotificationBell';
 
 const drawerWidth = 240;
 
 const Layout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
   const location = useLocation();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  const handleMenu = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
   };
 
   const volunteerMenuItems = [
@@ -39,6 +51,11 @@ const Layout = () => {
   const scheduleMenuItems = [
     { text: '排班管理', path: '/dashboard' },
     { text: '排班列表', path: '/schedules' },
+  ];
+
+  const notificationMenuItems = [
+    { text: '通知管理', path: '/notifications' },
+    { text: '通知設定', path: '/notifications/settings' },
   ];
 
   const drawer = (
@@ -75,6 +92,22 @@ const Layout = () => {
             </ListItemButton>
           </ListItem>
         ))}
+
+        <ListSubheader>通知管理</ListSubheader>
+        {notificationMenuItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={item.path}
+              selected={location.pathname === item.path}
+            >
+              <ListItemIcon>
+                <NotificationsIcon />
+              </ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
       </List>
     </Box>
   );
@@ -94,6 +127,37 @@ const Layout = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             龜馬山志工排班系統
           </Typography>
+          
+          <NotificationBell />
+          
+          <IconButton
+            size="large"
+            aria-label="account of current user"
+            aria-controls="menu-appbar"
+            aria-haspopup="true"
+            onClick={handleMenu}
+            color="inherit"
+          >
+            <Typography variant="body2">管理員</Typography>
+          </IconButton>
+          <Menu
+            id="menu-appbar"
+            anchorEl={anchorEl}
+            anchorOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            keepMounted
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            open={Boolean(anchorEl)}
+            onClose={handleClose}
+          >
+            <MenuItem onClick={handleClose}>個人設定</MenuItem>
+            <MenuItem onClick={handleClose}>登出</MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
 
