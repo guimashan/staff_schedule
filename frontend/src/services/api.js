@@ -1,66 +1,57 @@
+// frontend/src/services/api.js
 import axios from 'axios';
 
-// 從環境變數獲取 API 基礎 URL（如果有的話）
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://您的-render-url.onrender.com/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
-// 建立 axios 實例
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 10000,
 });
 
-// 請求攔截器 - 添加 token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// 請求攔截器 - 添加認證token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
-// 響應攔截器 - 處理錯誤
+// 響應攔截器 - 處理token過期
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // token 過期或無效，清除本地儲存並重新導向
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/';
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
 
+// 志工相關API
+export const volunteerAPI = {
+  getAll: () => api.get('/volunteers'),
+  getById: (id) => api.get(`/volunteers/${id}`),
+  create: (data) => api.post('/volunteers', data),
+  update: (id, data) => api.put(`/volunteers/${id}`, data),
+  delete: (id) => api.delete(`/volunteers/${id}`),
+  import: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/volunteers/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    });
+  },
+  getStats: () => api.get('/volunteers/stats'),
+  search: (query) => api.get(`/volunteers/search?q=${encodeURIComponent(query)}`)
+};
+
 export default api;
-
-// 認證相關 API
-export const authService = {
-  login: (username, password) => 
-    api.post('/auth/login', { username, password }),
-  
-  getUserInfo: () => 
-    api.get('/auth/me'),
-};
-
-// 排班相關 API
-export const scheduleService = {
-  // 獲取指定月份的排班
-  getMonthSchedule: (year, month) => 
-    api.get(`/schedules/${year}/${month}`),
-  
-  // 獲取用戶的排班
-  getUserSchedule: (userId, year, month) => 
-    api.get(`/schedules/user/${userId}/${year}/${month}`),
-  
-  // 獲取組別排班
-  getGroupSchedule: (groupId, year, month) => 
-    api.get(`/schedules/group/${groupId}/${year}/${month}`),
-  
-  // 申請排班
-  requestSchedule: (scheduleData) => 
-    api.post('/schedules/request', scheduleData),
-  
-  // 管理員/組長設定排班
-  setSchedule: (scheduleData) => 
-    api.post('/schedules/set', scheduleData),
-};
