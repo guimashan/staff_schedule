@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Navbar, Nav, Button, Alert, Row, Col } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import ScheduleCalendar from '../components/ScheduleCalendar';
 
@@ -66,6 +66,9 @@ const Dashboard = () => {
         <Container>
           <Navbar.Brand>龜馬山 志工排班系統</Navbar.Brand>
           <Nav className="ms-auto">
+            <Nav.Link as={Link} to="/profile" className="text-white me-3">
+              個人資料
+            </Nav.Link>
             <Nav.Item className="text-white me-3 d-flex align-items-center">
               歡迎，{user?.name} ({user?.role === 'admin' ? '管理者' : 
                                 user?.role === 'power_user' ? '組長' : '組員'})
