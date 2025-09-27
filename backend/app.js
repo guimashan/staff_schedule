@@ -15,6 +15,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/volunteers', require('./routes/volunteers'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/schedules', require('./routes/schedules'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // 錯誤處理
 app.use((err, req, res, next) => {
