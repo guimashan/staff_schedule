@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Navbar, Nav, Button, Alert } from 'react-bootstrap';
+import { Container, Navbar, Nav, Button, Alert, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import ScheduleCalendar from '../components/ScheduleCalendar';
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
@@ -18,7 +19,7 @@ const Dashboard = () => {
       }
 
       try {
-        const response = await axios.get('https://staff-schedule-您的-render-url.onrender.com/api/auth/me', {
+        const response = await axios.get('https://您的-render-url.onrender.com/api/auth/me', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -77,15 +78,18 @@ const Dashboard = () => {
       </Navbar>
 
       <Container className="mt-4">
-        <h3>儀表板</h3>
-        <p>歡迎使用龜馬山 志工排班系統！</p>
-        <p>您的帳號資訊：</p>
-        <ul>
-          <li>帳號：{user?.username}</li>
-          <li>姓名：{user?.name}</li>
-          <li>角色：{user?.role === 'admin' ? '管理者' : 
-                   user?.role === 'power_user' ? '組長' : '組員'}</li>
-        </ul>
+        <Row>
+          <Col md={12}>
+            <h3>儀表板</h3>
+            <p>歡迎使用龜馬山 志工排班系統！</p>
+          </Col>
+        </Row>
+        
+        <Row>
+          <Col md={12}>
+            {user && <ScheduleCalendar user={user} />}
+          </Col>
+        </Row>
       </Container>
     </div>
   );
