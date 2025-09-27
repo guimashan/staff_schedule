@@ -1,4 +1,4 @@
-// frontend/src/services/api.js
+// frontend/src/services/api.js (更新後)
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
@@ -52,6 +52,18 @@ export const volunteerAPI = {
   },
   getStats: () => api.get('/volunteers/stats'),
   search: (query) => api.get(`/volunteers/search?q=${encodeURIComponent(query)}`)
+};
+
+// 排班相關API
+export const scheduleAPI = {
+  getAll: () => api.get('/schedules'),
+  getById: (id) => api.get(`/schedules/${id}`),
+  create: (data) => api.post('/schedules', data),
+  update: (id, data) => api.put(`/schedules/${id}`, data),
+  delete: (id) => api.delete(`/schedules/${id}`),
+  getStats: () => api.get('/schedules/stats'),
+  getMonthly: (year, month) => api.get(`/schedules/monthly?year=${year}&month=${month}`),
+  getWeekly: (startDate) => api.get(`/schedules/weekly?start_date=${startDate}`)
 };
 
 export default api;
