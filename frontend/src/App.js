@@ -1,49 +1,29 @@
-// frontend/src/App.js
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { Box } from '@mui/material';
-import LoginForm from './components/auth/LoginForm';
-import Layout from './components/common/Layout';
-import VolunteerList from './components/volunteer/VolunteerList';
-import VolunteerStats from './components/volunteer/VolunteerStats';
-import VolunteerImport from './components/volunteer/VolunteerImport';
-import ScheduleManager from './components/schedule/ScheduleManager';
+// backend/app.js (更新後)
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const db = require('./config/database');
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
+const app = express();
+
+// 中間件
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// 路由
+app.use('/api/volunteers', require('./routes/volunteers'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/schedules', require('./routes/schedules'));
+
+// 錯誤處理
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: '伺服器錯誤' });
 });
 
-function App() {
-  const token = localStorage.getItem('token');
-
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
-        <Box sx={{ minHeight: '100vh' }}>
-          <Routes>
-            <Route path="/login" element={!token ? <LoginForm /> : <Navigate to="/dashboard" />} />
-            <Route path="/" element={token ? <Layout /> : <Navigate to="/login" />}>
-              <Route path="dashboard" element={<ScheduleManager />} />
-              <Route path="volunteers" element={<VolunteerList />} />
-              <Route path="volunteers/stats" element={<VolunteerStats />} />
-              <Route path="volunteers/import" element={<VolunteerImport />} />
-              <Route path="schedules" element={<ScheduleManager />} />
-            </Route>
-          </Routes>
-        </Box>
-      </Router>
-    </ThemeProvider>
-  );
-}
-
-export default App;
+// 啟動伺服器
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`伺服器運行在 port ${PORT}`);
+});
