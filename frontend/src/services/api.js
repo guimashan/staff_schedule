@@ -66,4 +66,17 @@ export const scheduleAPI = {
   getWeekly: (startDate) => api.get(`/schedules/weekly?start_date=${startDate}`)
 };
 
+// 通知相關API
+export const notificationAPI = {
+  getAll: () => api.get('/notifications'),
+  getUnread: () => api.get('/notifications/unread'),
+  getById: (id) => api.get(`/notifications/${id}`),
+  create: (data) => api.post('/notifications', data),
+  update: (id, data) => api.put(`/notifications/${id}`, data),
+  delete: (id) => api.delete(`/notifications/${id}`),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllAsRead: () => api.put('/notifications/mark-all-read'),
+  getStats: () => api.get('/notifications/stats')
+};
+
 export default api;
