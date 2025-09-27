@@ -79,4 +79,15 @@ export const notificationAPI = {
   getStats: () => api.get('/notifications/stats')
 };
 
+// 報告相關API
+export const reportAPI = {
+  getAll: () => api.get('/reports'),
+  getDashboard: () => api.get('/reports/dashboard'),
+  getVolunteerReport: (filters) => api.get('/reports/volunteers', { params: filters }),
+  getScheduleReport: (filters) => api.get('/reports/schedules', { params: filters }),
+  getAttendanceReport: (filters) => api.get('/reports/attendance', { params: filters }),
+  export: (format) => api.get(`/reports/export/${format}`, { responseType: 'blob' }),
+  getStats: () => api.get('/reports/stats')
+};
+
 export default api;
