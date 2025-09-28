@@ -1,4 +1,4 @@
-// frontend/src/App.js (更新後)
+// frontend/src/App.js (修正後 - 確保有正確的路由)
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -21,18 +21,6 @@ const theme = createTheme({
     },
     secondary: {
       main: '#dc004e',
-    },
-  },
-  components: {
-    MuiCssBaseline: {
-      styleOverrides: {
-        '*': {
-          boxSizing: 'border-box',
-        },
-        '*, *::before, *::after': {
-          boxSizing: 'inherit',
-        },
-      },
     },
   },
 });
