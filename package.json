@@ -1,4 +1,4 @@
-// package.json (更新測試配置)
+// package.json (根目錄)
 {
   "name": "guimashan-staff-schedule",
   "version": "1.0.0",
@@ -27,7 +27,15 @@
     "axios": "^1.0.0",
     "react-big-calendar": "^1.6.2",
     "@mui/material": "^5.10.0",
-    "@mui/x-charts": "^6.0.0"
+    "@mui/x-date-pickers": "^5.0.0",
+    "@mui/x-charts": "^6.0.0",
+    "helmet": "^6.0.0",
+    "express-rate-limit": "^6.0.0",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0",
+    "winston": "^3.8.0",
+    "node-cron": "^3.0.0",
+    "nodemailer": "^6.8.0"
   },
   "devDependencies": {
     "jest": "^29.0.0",
@@ -36,6 +44,7 @@
     "@testing-library/react": "^13.0.0",
     "@testing-library/jest-dom": "^5.16.0",
     "@testing-library/user-event": "^14.0.0",
-    "nodemon": "^2.0.0"
+    "nodemon": "^2.0.0",
+    "node-cache": "^5.1.2"
   }
 }
