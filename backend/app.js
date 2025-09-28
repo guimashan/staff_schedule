@@ -1,4 +1,5 @@
-// backend/app.js (最終版本)
+// 更新後端以支援React Router
+// backend/app.js (修正後)
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -49,7 +50,7 @@ app.use(cors(config.security.cors));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// 靜態檔案服務
+// 靜態檔案服務 - 指向React建置目錄
 app.use(express.static(path.join(__dirname, '../frontend/build')));
 
 // 速率限制
@@ -94,14 +95,14 @@ app.get('/api/audit', async (req, res) => {
   }
 });
 
-// 路由
+// API路由
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/volunteers', require('./routes/volunteers'));
 app.use('/api/schedules', require('./routes/schedules'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/reports', require('./routes/reports'));
 
-// 前端路由支援 (React Router)
+// React Router支援 - 所有非API路由都返回React應用
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/build/index.html'));
 });
