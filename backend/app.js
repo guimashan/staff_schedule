@@ -1,118 +1,155 @@
-// backend/app.js (最終版本)
+// backend/app.js
 const express = require('express');
-const cors = require('cors');
 const path = require('path');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const compression = require('compression');
-const morgan = require('morgan');
-const fs = require('fs');
+const cors = require('cors');
+const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
+const PORT = process.env.PORT || 3001;
 
-// 檢查前端建置是否存在
-const frontendBuildPath = path.join(__dirname, 'static');
-const hasFrontendBuild = fs.existsSync(frontendBuildPath);
+// 創建SQLite資料庫
+const dbPath = path.join(__dirname, 'database.db');
+const db = new sqlite3.Database(dbPath);
 
-// 安全頭部設定
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://api.example.com"]
-    }
-  }
-}));
+// 創建資料表
+db.serialize(() => {
+  // 志工表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS volunteers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      department TEXT,
+      skills TEXT,
+      experience_years INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'active',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
-// 請求日誌
-app.use(morgan('combined'));
+  // 排班表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS schedules (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      volunteer_id INTEGER NOT NULL,
+      start_time DATETIME NOT NULL,
+      end_time DATETIME NOT NULL,
+      shift_type TEXT NOT NULL DEFAULT 'morning',
+      location TEXT,
+      status TEXT NOT NULL DEFAULT 'scheduled',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (volunteer_id) REFERENCES volunteers (id)
+    )
+  `);
+});
 
 // 中間件
-app.use(compression());
-app.use(cors({
-  origin: '*',
-  credentials: true
-}));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// 速率限制
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分鐘
-  max: 100 // 限制每個IP 15分鐘內最多100次請求
-});
-app.use('/api/', limiter);
+// 靜態檔案服務
+app.use(express.static(path.join(__dirname, '../frontend/build')));
 
-// 靜態檔案服務 - 如果有前端建置則服務它們
-if (hasFrontendBuild) {
-  app.use(express.static(frontendBuildPath));
-  console.log('✅ 前端建置已載入');
-} else {
-  // 如果沒有前端建置，提供一個簡單的頁面
-  app.use(express.static(path.join(__dirname, '../frontend/public')));
-  console.log('⚠️ 前端建置未找到，使用開發模式');
-}
-
-// 健康檢查端點
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
-    version: '1.0.0',
-    frontend: hasFrontendBuild ? 'built' : 'not built'
+// API路由
+// 獲取志工列表
+app.get('/api/volunteers', (req, res) => {
+  db.all('SELECT * FROM volunteers ORDER BY created_at DESC', (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows);
   });
 });
 
-// API路由
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'API服務正常運行' });
-});
-
-// React Router支援 - 所有非API路由都返回React應用
-app.get('*', (req, res) => {
-  if (hasFrontendBuild) {
-    res.sendFile(path.join(frontendBuildPath, 'index.html'));
-  } else {
-    // 如果沒有前端建置，返回簡單的HTML
-    res.send(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-          <title>龜馬山志工排班系統</title>
-          <style>
-              body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-              .container { max-width: 600px; margin: 0 auto; }
-          </style>
-      </head>
-      <body>
-          <div class="container">
-              <h1>龜馬山志工排班系統</h1>
-              <p>系統正在建置中...</p>
-              <p>API服務正常運行: <a href="/api/health">健康檢查</a></p>
-              <p>請確保前端已正確建置</p>
-          </div>
-      </body>
-      </html>
-    `);
+// 新增志工
+app.post('/api/volunteers', (req, res) => {
+  const { name, phone, email, department, skills, experience_years } = req.body;
+  
+  if (!name || !phone || !email) {
+    res.status(400).json({ error: '姓名、電話和電子郵件是必填的' });
+    return;
   }
+
+  const stmt = db.prepare(`
+    INSERT INTO volunteers (name, phone, email, department, skills, experience_years)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  
+  stmt.run([name, phone, email, department, skills, experience_years], function(err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ id: this.lastID, name, phone, email, department, skills, experience_years });
+  });
+  
+  stmt.finalize();
 });
 
-// 錯誤處理
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: '伺服器錯誤' });
+// 獲取排班列表
+app.get('/api/schedules', (req, res) => {
+  db.all(`
+    SELECT s.*, v.name as volunteer_name 
+    FROM schedules s
+    LEFT JOIN volunteers v ON s.volunteer_id = v.id
+    ORDER BY s.start_time DESC
+  `, (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows);
+  });
 });
 
-const PORT = process.env.PORT || 3001;
+// 新增排班
+app.post('/api/schedules', (req, res) => {
+  const { volunteer_id, start_time, end_time, shift_type, location } = req.body;
+  
+  if (!volunteer_id || !start_time || !end_time) {
+    res.status(400).json({ error: '志工ID、開始時間和結束時間是必填的' });
+    return;
+  }
+
+  const stmt = db.prepare(`
+    INSERT INTO schedules (volunteer_id, start_time, end_time, shift_type, location)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+  
+  stmt.run([volunteer_id, start_time, end_time, shift_type, location], function(err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ id: this.lastID, volunteer_id, start_time, end_time, shift_type, location });
+  });
+  
+  stmt.finalize();
+});
+
+// 健康檢查端點
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// React Router支援
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/build/index.html'));
+});
+
+// 啟動伺服器
 app.listen(PORT, () => {
   console.log(`🚀 伺服器運行在 http://localhost:${PORT}`);
   console.log(`📊 健康檢查: http://localhost:${PORT}/api/health`);
-  console.log(`📱 前端: http://localhost:${PORT}`);
+  console.log(`📋 志工API: http://localhost:${PORT}/api/volunteers`);
+  console.log(`📅 排班API: http://localhost:${PORT}/api/schedules`);
 });
 
 module.exports = app;
