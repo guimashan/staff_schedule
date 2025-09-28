@@ -1,12 +1,13 @@
 # .github/workflows/deploy.yml
-name: Deploy to Production
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
     
     steps:
@@ -24,71 +25,14 @@ jobs:
         cd frontend
         npm ci
     
-    - name: Run tests
+    - name: Build frontend
       run: |
-        npm test
         cd frontend
-        npm test
-
-  build:
-    needs: test
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'npm'
-    
-    - name: Build application
-      run: |
-        npm ci
-        cd frontend
-        npm ci
         npm run build
     
-    - name: Build Docker image
-      run: |
-        docker build -t guimashan-staff-schedule:latest -f deploy/docker/Dockerfile .
-    
-    - name: Save Docker image
-      run: |
-        docker save guimashan-staff-schedule:latest -o guimashan-staff-schedule.tar
-    
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
       with:
-        name: docker-image
-        path: guimashan-staff-schedule.tar
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: Download Docker image
-      uses: actions/download-artifact@v3
-      with:
-        name: docker-image
-    
-    - name: Load Docker image
-      run: |
-        docker load -i guimashan-staff-schedule.tar
-    
-    - name: Deploy to server
-      uses: appleboy/ssh-action@v0.1.5
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        script: |
-          docker stop guimashan-app || true
-          docker rm guimashan-app || true
-          docker rmi guimashan-staff-schedule:latest || true
-          docker load -i guimashan-staff-schedule.tar
-          docker run -d --name guimashan-app -p 3001:3001 guimashan-staff-schedule:latest
-          docker system prune -f
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./frontend/build
+        publish_branch: gh-pages
