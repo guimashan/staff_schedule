@@ -1,26 +1,35 @@
+// frontend/package.json
 {
-  "name": "staff-schedule-frontend",
-  "version": "1.0.0",
+  "name": "guimashan-frontend",
+  "version": "0.1.0",
   "private": true,
-  "description": "龜馬山 志工排班系統前端",
-  "main": "src/index.js",
+  "dependencies": {
+    "@emotion/react": "^11.10.0",
+    "@emotion/styled": "^11.10.0",
+    "@mui/icons-material": "^5.8.4",
+    "@mui/material": "^5.10.0",
+    "@mui/x-date-pickers": "^5.0.0",
+    "axios": "^1.0.0",
+    "date-fns": "^2.29.0",
+    "react": "^18.2.0",
+    "react-big-calendar": "^1.6.2",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.34.0",
+    "react-router-dom": "^6.3.0",
+    "react-scripts": "5.0.1"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "axios": "^1.6.0",
-    "bootstrap": "^5.3.0",
-    "react-bootstrap": "^2.8.0",
-    "react-router-dom": "^6.15.0",
-    "@fullcalendar/react": "^6.1.0",
-    "@fullcalendar/daygrid": "^6.1.0",
-    "@fullcalendar/interaction": "^6.1.0"
+  "proxy": "http://localhost:3001",
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
   },
   "browserslist": {
     "production": [
