@@ -1,4 +1,4 @@
-// backend/app.js (最終更新)
+// backend/app.js (最終版本)
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -13,6 +13,9 @@ const performanceConfig = require('./config/performance');
 const PerformanceMiddleware = require('./middleware/performance');
 const databaseOptimizer = require('./performance/database');
 const logger = require('./config/logging');
+const alertSystem = require('../production/monitoring/alerts');
+const backupSystem = require('../production/backup/backup');
+const securityAudit = require('../production/security/audit');
 
 const app = express();
 const config = envConfig.getConfig();
@@ -57,9 +60,6 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// 監控路由
-app.use('/api/monitor', require('./routes/monitoring'));
-
 // 健康檢查端點
 app.get('/api/health', (req, res) => {
   res.json({
@@ -69,6 +69,29 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     version: '1.0.0'
   });
+});
+
+// 監控路由
+app.use('/api/monitor', require('./routes/monitoring'));
+
+// 備份路由
+app.get('/api/backup', async (req, res) => {
+  try {
+    const result = await backupSystem.backupFull();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 安全審計路由
+app.get('/api/audit', async (req, res) => {
+  try {
+    const result = await securityAudit.generateSecurityReport();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // 路由
@@ -99,17 +122,30 @@ app.use((err, req, res, next) => {
   }
 });
 
-// 初始化效能優化
-async function initializePerformance() {
+// 初始化系統功能
+async function initializeSystem() {
   try {
-    // 建立資料庫索引
+    // 初始化效能優化
     await databaseOptimizer.createOptimizedIndexes();
     logger.info('資料庫效能優化完成');
     
-    // 開始效能監控
-    logger.info('效能監控已啟動');
+    // 啟動監控系統
+    alertSystem.startMonitoring();
+    logger.info('系統監控已啟動');
+    
+    // 啟動定期備份
+    backupSystem.startScheduledBackups();
+    logger.info('定期備份已啟動');
+    
+    // 執行初始安全審計
+    const auditResult = await securityAudit.performAudit();
+    logger.info('初始安全審計完成', { score: auditResult.overallScore });
+    
+    // 發送系統啟動通知
+    logger.info('系統已啟動並準備就緒');
   } catch (error) {
-    logger.error('效能優化初始化失敗', { error: error.message });
+    logger.error('系統初始化失敗', { error: error.message });
+    process.exit(1);
   }
 }
 
@@ -123,7 +159,7 @@ const server = app.listen(PORT, HOST, async () => {
     timestamp: new Date().toISOString()
   });
   
-  await initializePerformance();
+  await initializeSystem();
 });
 
 // 處理未捕獲的異常
@@ -135,6 +171,23 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('未處理的Promise拒絕', { reason, promise });
   process.exit(1);
+});
+
+// 處理程序信號
+process.on('SIGTERM', () => {
+  logger.info('收到SIGTERM信號，正在關閉伺服器...');
+  server.close(() => {
+    logger.info('伺服器已關閉');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  logger.info('收到SIGINT信號，正在關閉伺服器...');
+  server.close(() => {
+    logger.info('伺服器已關閉');
+    process.exit(0);
+  });
 });
 
 module.exports = app;
